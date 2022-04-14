@@ -1,4 +1,5 @@
 *.swp
+env/
 
 app/bin/
 app/pde.jar
