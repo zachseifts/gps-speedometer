@@ -22,6 +22,8 @@ class Sensor:
 
         self.reading = None
 
+        logging.debug('created Sensor() object.')
+
     def start(self):
         ''' Starts the connection and starts polling the sensor.
         '''
@@ -33,7 +35,8 @@ class Sensor:
             logging.debug('starting to read sensor')
             while True:
                 # Delete the current reading.
-                del(self.reading)
+                if self.reading is not None:
+                    del(self.reading)
 
                 # Read data from the sensor and create a Reading object.
                 data = device.readline()
@@ -58,6 +61,7 @@ class Reading:
 
         # Parse the data from the sensor.
         self._parse_data()
+        logging.info(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime}')
 
     def _parse_data(self):
         ''' Function to parse csv data returned from the sensor.
@@ -84,25 +88,28 @@ class Reading:
                     # The datetime conversion will fail when an empty string
                     # is returned from the sensor. It should be set back to
                     # None when this happens.
+                    logging.debug('invalid datetime format')
                     self.datetime = None
             except IndexError:
                 # There is no data in the reading yet.
-                pass
+                logging.debug('no data from sensor')
 
-        logging.info(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime}')
 
 if __name__ == '__main__':
-
     try:
-
         logging.basicConfig(format='%(levelname)s: %(message)s', level = logging.DEBUG)
 
+        # Create the sensor object
         sensor = Sensor(
             port = '/dev/cu.usbmodem3101',
             baudrate = 115200,
             timeout = 1)
-        logging.debug('created Sensor() object.')
+
+        # Start reading data from the sensor.
         sensor.start()
     except KeyboardInterrupt:
+        # Exit cleanly if a KeyboardInterrupt is raised.
+        del(sensor)
+        logging.debug('exiting...')
         sys.exit()
 
