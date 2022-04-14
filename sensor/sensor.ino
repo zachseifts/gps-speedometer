@@ -32,7 +32,7 @@ static const uint32_t GPSBaud = 9600;
 static const uint32_t SerialBaud = 115200;
 
 // Variables for the DHT sensor.
-static const int maxReadings = 20;
+static const int maxReadings = 60;
 
 // Variables to cache DHT sensor data.
 int readings = 0;

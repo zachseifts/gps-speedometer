@@ -105,7 +105,7 @@ class Reading:
                     logging.info('no data from sensor')
         except UnicodeDecodeError:
             # Sometimes it cannot decode the first byte when decoding the string.
-            pass
+            logging.info('failing unicode decode error.')
 
 
 if __name__ == '__main__':
