@@ -65,15 +65,15 @@ class Reading:
         self.temp = None
 
         # Parse the data from the sensor.
-        self._parse_data()
-        logging.debug(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime} {self.humidity}, {self.temp}')
+        self._read()
 
-    def _parse_data(self):
+    def _read(self):
         ''' Function to parse csv data returned from the sensor.
         '''
         # Open the data in a list into a _csv.reader object.
         try:
-            data = reader([self.data.decode('utf-8').replace('\n', '')])
+            decoded_data = self.data.decode('utf-8').replace('\n', '')
+            data = reader([decoded_data])
 
             # Get the reading from the _csv.reader object.
             reading = next(data)
@@ -94,18 +94,20 @@ class Reading:
                         # The datetime conversion will fail when an empty string
                         # is returned from the sensor. It should be set back to
                         # None when this happens.
-                        logging.info('invalid datetime format')
+                        logging.exception('invalid datetime format')
                         self.datetime = None
 
                     self.humidity = reading[7]
                     self.temp = reading[8]
 
+                    logging.debug(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime} {self.humidity}, {self.temp}')
+
                 except IndexError:
                     # There is no data in the reading yet.
-                    logging.info('no data from sensor')
+                    logging.exception('no data from sensor')
         except UnicodeDecodeError:
             # Sometimes it cannot decode the first byte when decoding the string.
-            logging.info('failing unicode decode error.')
+            logging.exception('failing unicode decode error.')
 
 
 if __name__ == '__main__':

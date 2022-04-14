@@ -23,16 +23,18 @@
  */
 
 // Variables for sensor pins.
-static const int DHTPin = 2;
-static const int TXPin = 3;
-static const int RXPin = 4;
+static const int TXPin = 2;
+static const int RXPin = 3;
+static const int DHTPin = 4;
+static const int DHTActivity = 5;
+
 
 // Variables for the GPS board.
 static const uint32_t GPSBaud = 9600;
 static const uint32_t SerialBaud = 115200;
 
 // Variables for the DHT sensor.
-static const int maxReadings = 60;
+static const int maxReadings = 120;
 
 // Variables to cache DHT sensor data.
 int readings = 0;
@@ -58,6 +60,9 @@ void setup()
 
   // Connect to the DHT11 sensor.
   dht.begin();
+
+  // Setup the DHT activity light pin
+  pinMode(DHTActivity, OUTPUT);
 }
 
 void loop()
@@ -69,9 +74,12 @@ void loop()
 // Only grab sensor data every 20 cycles (seconds right now).
 static void readDHTData() {
   if (readings >= maxReadings) {
+    digitalWrite(DHTActivity, HIGH);
     temp = dht.readTemperature();
     humidity = dht.readHumidity();
     readings = 0;
+    smartDelay(100);
+    digitalWrite(DHTActivity, LOW);
   }
   readings++;
 }
@@ -109,7 +117,7 @@ static void writeSerialData() {
   Serial.print(F(","));
   Serial.println();
 
-  smartDelay(1000);
+  smartDelay(500);
 }
 
 // A non-blocking delay function.
