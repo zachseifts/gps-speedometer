@@ -17,18 +17,27 @@
  *  - altitude in feet
  *  - speed in mph
  *  - course in deg
+ *  - datetime in ISO format
  *  - temperature in F
  *  - humidity
- *  - datetime in ISO format
  */
 
-// Setup some variables for pins and baud rates and sensor pins.
-static const int RXPin = 13;
-static const int TXPin = 12;
+// Variables for sensor pins.
 static const int DHTPin = 2;
+static const int TXPin = 3;
+static const int RXPin = 4;
 
+// Variables for the GPS board.
 static const uint32_t GPSBaud = 9600;
 static const uint32_t SerialBaud = 115200;
+
+// Variables for the DHT sensor.
+static const int maxReadings = 20;
+
+// Variables to cache DHT sensor data.
+int readings = 0;
+float temp = 0;
+float humidity = 0;
 
 // Create the TinyGPSPlus object.
 TinyGPSPlus gps;
@@ -47,12 +56,30 @@ void setup()
   // Connect to the gps board's serial port.
   ss.begin(GPSBaud);
 
+  // Connect to the DHT11 sensor.
   dht.begin();
 }
 
 void loop()
 {
-  // Start writing out gps data on the internal Serial port.
+  readDHTData();
+  writeSerialData();
+}
+
+// Only grab sensor data every 20 cycles (seconds right now).
+static void readDHTData() {
+  if (readings >= maxReadings) {
+    temp = dht.readTemperature();
+    humidity = dht.readHumidity();
+    readings = 0;
+  }
+  readings++;
+}
+
+// Write data out to the serial port.
+static void writeSerialData() {
+
+  // Formats GPS data.
   Serial.print(gps.satellites.value());
   Serial.print(F(","));
   Serial.print(gps.location.lat(), 6);
@@ -65,23 +92,24 @@ void loop()
   Serial.print(F(","));
   Serial.print(gps.course.deg());
   Serial.print(F(","));
-  printDateTime(gps.date, gps.time);
+
+  // Formats the time and date into python readable format.
+  char d[32];
+  sprintf(d, "%02d-%02d-%02d ", gps.date.year(), gps.date.month(), gps.date.day());
+  Serial.print(d);
+  char t[32];
+  sprintf(t, "%02d:%02d:%02d", gps.time.hour(), gps.time.minute(), gps.time.second());
+  Serial.print(t);
+
+  // Formats weather data.
   Serial.print(F(","));
-  Serial.print(dht.readHumidity());
+  Serial.print(humidity);
   Serial.print(F(","));
-  Serial.print(dht.readTemperature());
+  Serial.print(temp);
   Serial.print(F(","));
   Serial.println();
 
   smartDelay(1000);
-
-  // Check to see if the board is properly configured.
-  if (millis() > 5000 && gps.charsProcessed() < 10)
-    Serial.println(F("No GPS data received,"));
-}
-
-static void readGPSData() {
-  
 }
 
 // A non-blocking delay function.
@@ -93,32 +121,4 @@ static void smartDelay(unsigned long ms)
     while (ss.available())
       gps.encode(ss.read());
   } while (millis() - start < ms);
-}
-
-// Formats the time for python's datetime.fromisoformat().
-static void printDateTime(TinyGPSDate &d, TinyGPSTime &t)
-{
-  if (!d.isValid())
-  {
-    Serial.print(F(""));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d-%02d-%02d ", d.year(), d.month(), d.day());
-    Serial.print(sz);
-  }
-  
-  if (!t.isValid())
-  {
-    Serial.print(F(""));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d:%02d:%02d", t.hour(), t.minute(), t.second());
-    Serial.print(sz);
-  }
-
-  smartDelay(0);
 }
