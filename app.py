@@ -1,15 +1,44 @@
 ''' Reads the data from a GPS sensor on a Serial port and processes it.
 '''
 
+import sys
+import logging
+
 from time import sleep
 from csv import reader
 from datetime import datetime
 
 from serial import Serial
 
-PORT = '/dev/cu.usbmodem3101'
-BAUDRATE = 115200
-TIMEOUT = 1
+class Sensor:
+    ''' A class that keeps track of a sensor over a Serial port.
+
+    '''
+
+    def __init__(self, port, baudrate, timeout):
+        self.port = port
+        self.baudrate = baudrate
+        self.timeout = timeout
+
+        self.reading = None
+
+    def start(self):
+        ''' Starts the connection and starts polling the sensor.
+        '''
+        with Serial(
+            port = self.port,
+            baudrate = self.baudrate,
+            timeout = self.timeout) as device:
+
+            logging.debug('starting to read sensor')
+            while True:
+                # Delete the current reading.
+                del(self.reading)
+
+                # Read data from the sensor and create a Reading object.
+                data = device.readline()
+                self.reading = Reading(data = data)
+
 
 class Reading:
     ''' A class that keeps track of a reading.
@@ -60,24 +89,20 @@ class Reading:
                 # There is no data in the reading yet.
                 pass
 
+        logging.info(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime}')
 
 if __name__ == '__main__':
-    # Open a serial connection 
-    with Serial(port = PORT, baudrate = BAUDRATE, timeout = TIMEOUT) as device:
 
-        while True:
-            # Get data from the sensor
-            data = device.readline()
+    try:
 
-            # Create a Reading object with the data.
-            reading = Reading(data = data)
+        logging.basicConfig(format='%(levelname)s: %(message)s', level = logging.DEBUG)
 
-            print('number of satallites: {}'.format(reading.sats))
-            print('lat: {}'.format(reading.lat))
-            print('lon: {}'.format(reading.lon))
-            print('speed: {}'.format(reading.speed))
-            print(reading.datetime)
-
-            # Do a bit of garbage collection.
-            del(reading)
+        sensor = Sensor(
+            port = '/dev/cu.usbmodem3101',
+            baudrate = 115200,
+            timeout = 1)
+        logging.debug('created Sensor() object.')
+        sensor.start()
+    except KeyboardInterrupt:
+        sys.exit()
 
