@@ -7,6 +7,9 @@ from datetime import datetime
 
 from serial import Serial
 
+PORT = '/dev/cu.usbmodem3101'
+BAUDRATE = 115200
+TIMEOUT = 1
 
 class Reading:
     ''' A class that keeps track of a reading.
@@ -59,25 +62,22 @@ class Reading:
 
 
 if __name__ == '__main__':
-    port = '/dev/cu.usbmodem3101'
-    baudrate = 115200
-    timeout = 1
+    # Open a serial connection 
+    with Serial(port = PORT, baudrate = BAUDRATE, timeout = TIMEOUT) as device:
 
-    device = Serial(port = port, baudrate = baudrate, timeout = timeout)
+        while True:
+            # Get data from the sensor
+            data = device.readline()
 
-    while True:
-        # Get data from the sensor
-        data = device.readline()
+            # Create a Reading object with the data.
+            reading = Reading(data = data)
 
-        # Create a Reading object with the data.
-        reading = Reading(data = data)
+            print('number of satallites: {}'.format(reading.sats))
+            print('lat: {}'.format(reading.lat))
+            print('lon: {}'.format(reading.lon))
+            print('speed: {}'.format(reading.speed))
+            print(reading.datetime)
 
-        print('number of satallites: {}'.format(reading.sats))
-        print('lat: {}'.format(reading.lat))
-        print('lon: {}'.format(reading.lon))
-        print('speed: {}'.format(reading.speed))
-        print(reading.datetime)
-
-        # Do a bit of garbage collection.
-        del(reading)
+            # Do a bit of garbage collection.
+            del(reading)
 
