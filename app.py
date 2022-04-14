@@ -47,7 +47,7 @@ class Reading:
                 self.course = reading[5]
 
                 try:
-                    self.datetime = datetime.fromisoformat(reading[6])
+                    self.datetime = datetime.fromisoformat(reading[6] + '+00:00')
                 except ValueError:
                     # The datetime conversion will fail when an empty string
                     # is returned from the sensor. It should be set back to
@@ -75,6 +75,7 @@ if __name__ == '__main__':
         print('number of satallites: {}'.format(reading.sats))
         print('lat: {}'.format(reading.lat))
         print('lon: {}'.format(reading.lon))
+        print('speed: {}'.format(reading.speed))
         print(reading.datetime)
 
         # Do a bit of garbage collection.
