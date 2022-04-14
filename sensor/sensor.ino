@@ -73,7 +73,7 @@ void loop()
   Serial.print(F(","));
   Serial.println();
 
-  smartDelay(100);
+  smartDelay(1000);
 
   // Check to see if the board is properly configured.
   if (millis() > 5000 && gps.charsProcessed() < 10)
