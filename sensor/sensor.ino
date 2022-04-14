@@ -1,5 +1,6 @@
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
+#include <DHT.h>
 
 /* A simple gps interface for the arduino to communicate over a Serial port.
  * 
@@ -16,12 +17,16 @@
  *  - altitude in feet
  *  - speed in mph
  *  - course in deg
+ *  - temperature in F
+ *  - humidity
  *  - datetime in ISO format
  */
 
-// Setup some variables for pins and baud rates.
+// Setup some variables for pins and baud rates and sensor pins.
 static const int RXPin = 13;
 static const int TXPin = 12;
+static const int DHTPin = 2;
+
 static const uint32_t GPSBaud = 9600;
 static const uint32_t SerialBaud = 115200;
 
@@ -31,6 +36,9 @@ TinyGPSPlus gps;
 // GPS Serial port.
 SoftwareSerial ss(RXPin, TXPin);
 
+// Initalize the DHT sensor
+DHT dht(DHTPin, DHT11);
+
 void setup()
 {
   // Connect to the internal serial port.
@@ -38,6 +46,8 @@ void setup()
 
   // Connect to the gps board's serial port.
   ss.begin(GPSBaud);
+
+  dht.begin();
 }
 
 void loop()
@@ -56,6 +66,11 @@ void loop()
   Serial.print(gps.course.deg());
   Serial.print(F(","));
   printDateTime(gps.date, gps.time);
+  Serial.print(F(","));
+  Serial.print(dht.readHumidity());
+  Serial.print(F(","));
+  Serial.print(dht.readTemperature());
+  Serial.print(F(","));
   Serial.println();
 
   smartDelay(100);
@@ -63,6 +78,10 @@ void loop()
   // Check to see if the board is properly configured.
   if (millis() > 5000 && gps.charsProcessed() < 10)
     Serial.println(F("No GPS data received,"));
+}
+
+static void readGPSData() {
+  
 }
 
 // A non-blocking delay function.

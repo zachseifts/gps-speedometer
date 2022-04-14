@@ -10,6 +10,9 @@ from datetime import datetime
 
 from serial import Serial
 
+logging_format = '%(levelname)s: %(message)s'
+logging.basicConfig(format = logging_format, level = logging.DEBUG)
+
 class Sensor:
     ''' A class that keeps track of a sensor over a Serial port.
 
@@ -22,7 +25,7 @@ class Sensor:
 
         self.reading = None
 
-        logging.debug('created Sensor() object.')
+        logging.info('created Sensor() object.')
 
     def start(self):
         ''' Starts the connection and starts polling the sensor.
@@ -32,7 +35,7 @@ class Sensor:
             baudrate = self.baudrate,
             timeout = self.timeout) as device:
 
-            logging.debug('starting to read sensor')
+            logging.info('starting to read sensor')
             while True:
                 # Delete the current reading.
                 if self.reading is not None:
@@ -58,47 +61,55 @@ class Reading:
         self.speed = None
         self.course = None
         self.datetime = None
+        self.humidity = None
+        self.temp = None
 
         # Parse the data from the sensor.
         self._parse_data()
-        logging.info(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime}')
+        logging.debug(f'{self.sats}, {self.lat}, {self.lon}, {self.alt}, {self.speed}, {self.course}, {self.datetime} {self.humidity}, {self.temp}')
 
     def _parse_data(self):
         ''' Function to parse csv data returned from the sensor.
         '''
         # Open the data in a list into a _csv.reader object.
-        data = reader([self.data.decode('utf-8').replace('\n', '')])
+        try:
+            data = reader([self.data.decode('utf-8').replace('\n', '')])
 
-        # Get the reading from the _csv.reader object.
-        reading = next(data)
+            # Get the reading from the _csv.reader object.
+            reading = next(data)
 
-        # Populate the object with data from the reading.
-        if reading:
-            try:
-                self.sats = reading[0]
-                self.lat = reading[1]
-                self.lon = reading[2]
-                self.alt = reading[3]
-                self.speed = reading[4]
-                self.course = reading[5]
-
+            # Populate the object with data from the reading.
+            if reading:
                 try:
-                    self.datetime = datetime.fromisoformat(reading[6] + '+00:00')
-                except ValueError:
-                    # The datetime conversion will fail when an empty string
-                    # is returned from the sensor. It should be set back to
-                    # None when this happens.
-                    logging.debug('invalid datetime format')
-                    self.datetime = None
-            except IndexError:
-                # There is no data in the reading yet.
-                logging.debug('no data from sensor')
+                    self.sats = reading[0]
+                    self.lat = reading[1]
+                    self.lon = reading[2]
+                    self.alt = reading[3]
+                    self.speed = reading[4]
+                    self.course = reading[5]
+
+                    try:
+                        self.datetime = datetime.fromisoformat(reading[6] + '+00:00')
+                    except ValueError:
+                        # The datetime conversion will fail when an empty string
+                        # is returned from the sensor. It should be set back to
+                        # None when this happens.
+                        logging.info('invalid datetime format')
+                        self.datetime = None
+
+                    self.humidity = reading[7]
+                    self.temp = reading[8]
+
+                except IndexError:
+                    # There is no data in the reading yet.
+                    logging.info('no data from sensor')
+        except UnicodeDecodeError:
+            # Sometimes it cannot decode the first byte when decoding the string.
+            pass
 
 
 if __name__ == '__main__':
     try:
-        logging.basicConfig(format='%(levelname)s: %(message)s', level = logging.DEBUG)
-
         # Create the sensor object
         sensor = Sensor(
             port = '/dev/cu.usbmodem3101',
@@ -110,6 +121,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         # Exit cleanly if a KeyboardInterrupt is raised.
         del(sensor)
-        logging.debug('exiting...')
+        logging.info('exiting...')
         sys.exit()
 
